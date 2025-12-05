@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="LoggingDemo/LoggingDemo.csproj" />
+  <Project Path="TryFormatter/TryFormatter.csproj" Id="31e2bef3-11f1-4648-9ae6-42ca13967174" />
 </Solution>
