@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Reflection;
 using System.Text;
+using TryFormatter.Attributes;
 
 
 namespace TryFormatter
@@ -45,11 +46,11 @@ namespace TryFormatter
             // 處理附加的其他物件
             foreach (var item in subValues)
             {
-                sb.Append($" {ToLogFmt(item)}");
+                sb.Append($"{ToLogFmt(item)}");
             }
 
 
-            return sb.ToString().Trim();
+            return sb.ToString().Replace(Environment.NewLine, " ---- ").Trim();
         }
 
         // ---------------------------------------------------------
@@ -91,32 +92,48 @@ namespace TryFormatter
         {
             var type = obj.GetType();
 
-            // 若是基本型別，直接輸出 key=value
+            // 基本型別 => 直接輸出
             if (IsSimpleType(type))
             {
-                AppendKeyValue(sb, prefix ?? type.Name, obj);
+                AppendKeyValue(sb, prefix, obj, forceOutput: false);
                 return;
             }
 
-            // 展開 public properties
+            // Properties
             foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (!prop.CanRead)
+                if (!prop.CanRead) continue;
+
+                // 屬性是否應該忽略
+                if (ShouldIgnore(prop, prop.PropertyType, out bool ignoreNull, out bool forceOutputNull))
                     continue;
 
                 var val = prop.GetValue(obj);
-                var key = CombineKey(prefix, prop.Name);
+                var key = CombineKey(prefix, prop.Name, prop);
+
+                // 處理 null 行為
+                if (HandleNullValue(sb, key, val, ignoreNull, forceOutputNull))
+                    continue;
+
                 SerializeValue(val, sb, key);
             }
 
-            // 展開 public fields
+            // Fields
             foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
+                if (ShouldIgnore(field, field.FieldType, out bool ignoreNull, out bool forceOutputNull))
+                    continue;
+
                 var val = field.GetValue(obj);
-                var key = CombineKey(prefix, field.Name);
+                var key = CombineKey(prefix, field.Name, field);
+
+                if (HandleNullValue(sb, key, val, ignoreNull, forceOutputNull))
+                    continue;
+
                 SerializeValue(val, sb, key);
             }
         }
+
 
         // ---------------------------------------------------------
         // Dictionary Serializer
@@ -169,11 +186,15 @@ namespace TryFormatter
             // 最外層 ex，用 inner_1, inner_2 代表下一層
             string p = level == 0 ? prefix : $"{prefix}_inner_{level}";
 
-            AppendKeyValue(sb, $"{p}_type", ex.GetType().FullName);
+            // Write exception details
+            if (ex.GetType() != typeof(Exception))
+                AppendKeyValue(sb, $"{p}_type", ex.GetType().FullName);
+
             AppendKeyValue(sb, $"{p}_message", ex.Message);
-            AppendKeyValue(sb, $"{p}_source", ex.Source);
             AppendKeyValue(sb, $"{p}_stack", ex.StackTrace);
-            AppendKeyValue(sb, $"{p}_hresult", ex.HResult);
+
+            //AppendKeyValue(sb, $"{p}_source", ex.Source);
+            //AppendKeyValue(sb, $"{p}_hresult", ex.HResult);
 
             // Exception.Data
             if (ex.Data != null)
@@ -212,15 +233,38 @@ namespace TryFormatter
         /// key 合併 prefix 與欄位名，並確保符合 logfmt 格式。
         /// prefix=null 時直接回傳處理過的 key。
         /// </summary>
-        private static string CombineKey(string prefix, string key)
+        private static string CombineKey(string prefix, string key, MemberInfo member = null)
         {
+            // 若有 LogFmtName 則覆蓋 key
+            var customName = member?.GetCustomAttribute<LogFmtNameAttribute>()?.Name;
+            if (!string.IsNullOrWhiteSpace(customName))
+                key = customName;
+
+            // 正規化
             key = NormalizeKey(key);
+            key = ToCamelCase(key);
 
             if (string.IsNullOrWhiteSpace(prefix))
                 return key;
 
             prefix = NormalizeKey(prefix);
+            prefix = ToCamelCase(prefix);
+
             return $"{prefix}_{key}";
+        }
+
+        /// <summary> camelCase 支援方法 </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        private static string ToCamelCase(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+                return s;
+
+            if (char.IsLower(s[0]))
+                return s;
+
+            return char.ToLower(s[0]) + s.Substring(1);
         }
 
         /// <summary>
@@ -235,13 +279,20 @@ namespace TryFormatter
         /// <summary>
         /// 在字串後面附加 key=value 格式內容，並自動處理字串跳脫。
         /// </summary>
-        private static void AppendKeyValue(StringBuilder sb, string key, object value)
+        private static void AppendKeyValue(StringBuilder sb, string key, object value, bool forceOutput = false)
         {
-            if (value == null) return;
+            if (value == null && !forceOutput)
+                return;
 
-            string val = FormatValue(value);
+            string val =
+                (value is null) 
+                    // 強制輸出 key=""
+                    ? @"""""" 
+                    : FormatValue(value);
+
             sb.Append($"{key}={val} ");
         }
+
 
         /// <summary>
         /// 格式化 value，使其符合 logfmt。
@@ -265,6 +316,58 @@ namespace TryFormatter
             return str;
         }
 
+        /// <summary> 是否應該忽略 </summary>
+        /// <param name="member"></param>
+        /// <param name="type"></param>
+        /// <param name="ignoreNull"></param>
+        /// <param name="forceOutputNull"></param>
+        /// <returns></returns>
+        private static bool ShouldIgnore(MemberInfo member, Type type,
+    out bool ignoreNull, out bool forceOutputNull)
+        {
+            ignoreNull = true;
+            forceOutputNull = false;
+
+            // LogFmtIgnore => 完全不輸出
+            if (member.GetCustomAttribute<LogFmtIgnoreAttribute>() != null)
+                return true;
+
+            // LogFmtIgnoreWhenNull
+            var nullAttr = member.GetCustomAttribute<LogFmtIgnoreWhenNullAttribute>();
+            if (nullAttr != null)
+            {
+                ignoreNull = nullAttr.IgnoreNull;
+                forceOutputNull = !nullAttr.IgnoreNull;
+            }
+
+            return false;
+        }
+
+        /// <summary> 處理 Null 的邏輯 </summary>
+        /// <param name="sb"></param>
+        /// <param name="key"></param>
+        /// <param name="val"></param>
+        /// <param name="ignoreNull"></param>
+        /// <param name="forceOutputNull"></param>
+        /// <returns></returns>
+        private static bool HandleNullValue(StringBuilder sb, string key, object val, bool ignoreNull, bool forceOutputNull)
+        {
+            if (val != null)
+                return false; // 不是 null => 正常處理
+
+            if (ignoreNull)
+                return true; // null 直接略過欄位
+
+            if (forceOutputNull)
+            {
+                AppendKeyValue(sb, key, null, forceOutput: true);
+                return true;
+            }
+
+            return true;
+        }
+
+
         /// <summary>
         /// 判斷字串是否需要加引號。
         /// logfmt 規範：包含空白、= 或 " 時需加引號。
@@ -279,7 +382,7 @@ namespace TryFormatter
         /// </summary>
         private static string EscapeQuotes(string s)
         {
-            return s.Replace("\"", "\\\"").Replace(Environment.NewLine, " \\r\\n ");
+            return s.Replace("\"", "\\\"");
         }
     }
 
