@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TryFormatter.Attributes;
 
 
 namespace TryFormatter
@@ -25,7 +26,7 @@ namespace TryFormatter
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 WriteDictionary();
 
-                Method1();
+                WriteException();
 
             }
             catch (Exception ex)
@@ -43,9 +44,6 @@ namespace TryFormatter
 
 
             Console.ForegroundColor = orgColor;
-
-            //Console.WriteLine("Hello, World!");
-            //Console.ReadLine();
         }
 
         private static void WriteDictionary()
@@ -118,8 +116,10 @@ namespace TryFormatter
             };
 
 
-            var obj1 = new
+            var obj1 = new TestClass()
             {
+                X1 = null,
+                X2 = null,
                 Id = 5,
                 Name = "Alice Bob",
                 Active = true
@@ -132,7 +132,7 @@ namespace TryFormatter
             //Console.WriteLine(LogFmtSerializer.ToLogFmt(user));
         }
 
-        public static void Method1()
+        public static void WriteException()
         {
             Method2();
         }
@@ -151,8 +151,23 @@ namespace TryFormatter
 
         public static void Method3()
         {
-            throw new Exception("some thing error");
+            throw new ArgumentException("some thing error");
         }
     }
 
+    internal class TestClass
+    {
+        public int? X1 { get; set; }
+
+        [LogFmtIgnoreWhenNull(false)]
+        public int? X2 { get; set; }
+        
+        public int Id { get; set; }
+        
+        [LogFmtIgnore]
+        public string Name { get; set; }
+
+        [LogFmtName("Enabled")]
+        public bool Active { get; set; }
+    }
 }
