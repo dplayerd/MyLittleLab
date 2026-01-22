@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/ReportProcessor/">
+    <Project Path="WireSharkCSVProcessor/WireSharkCSVProcessor.csproj" />
+  </Folder>
   <Project Path="LoggingDemo/LoggingDemo.csproj" />
+  <Project Path="MultiTaskLab/MultiTaskLab.csproj" Id="5657e1c2-0b5d-4eea-b6d7-8764f1b03dfd" />
   <Project Path="TryFormatter/TryFormatter.csproj" Id="31e2bef3-11f1-4648-9ae6-42ca13967174" />
 </Solution>
