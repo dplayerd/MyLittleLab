@@ -37,7 +37,15 @@ public class LogsController : ControllerBase
                 return Ok(MemoryLogData.ErrorLogs);
 
             default:
-                return Ok(Array.Empty<string>());
+                {
+                    var result =
+                        MemoryLogData.TraceLogs
+                        .Union(MemoryLogData.DebugLogs)
+                        .Union(MemoryLogData.InfoLogs)
+                        .Union(MemoryLogData.WarningLogs)
+                        .Union(MemoryLogData.ErrorLogs);
+                    return Ok(result);
+                }
         }
     }
 }
