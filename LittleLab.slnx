@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/ReportProcessor/">
+    <Project Path="RismLogProcessor/RismLogProcessor.csproj" Id="4b1b8f9a-b407-4b13-b8d7-2a2fdbf30939" />
     <Project Path="WireSharkCSVProcessor/WireSharkCSVProcessor.csproj" />
   </Folder>
   <Project Path="LoggingDemo/LoggingDemo.csproj" />
