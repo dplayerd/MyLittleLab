@@ -1,8 +1,4 @@
-﻿using System.Globalization;
-using System.Text;
-using CsvHelper;
-using CsvHelper.Configuration;
-using RismLogProcessor.Models;
+﻿using RismLogProcessor.Models;
 
 public sealed class DbIdFixer
 {

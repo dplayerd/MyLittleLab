@@ -1,7 +1,5 @@
-﻿using System.Globalization;
-using System.Text;
-using CsvHelper;
-using CsvHelper.Configuration;
+﻿using RismLogProcessor.Helpers;
+using RismLogProcessor.Models;
 // ===== Payload Parser (fixed-position, NO trim) =====
 public sealed class PayloadParser
 {
@@ -11,7 +9,7 @@ public sealed class PayloadParser
         var p = payload ?? "";
 
         // OK 判斷：允許後面都是空白（但不 Trim 原字串）
-        if (IsOkPayload(p))
+        if (PayloadRules.IsOkPayload(p))
             return new ParsedPayload { Prefix = "OK" };
 
         if (p.Length < 2)
@@ -81,19 +79,6 @@ public sealed class PayloadParser
             // 解析失敗仍回 prefix
             return new ParsedPayload { Prefix = prefix };
         }
-    }
-
-    private static bool IsOkPayload(string p)
-    {
-        if (p.Length < 2) return false;
-        if (!string.Equals(p.Substring(0, 2), "OK", StringComparison.OrdinalIgnoreCase)) return false;
-
-        // 後面允許全空白（space/tab）
-        for (int i = 2; i < p.Length; i++)
-        {
-            if (!char.IsWhiteSpace(p[i])) return false;
-        }
-        return true;
     }
 
     private static string SafeSub(string s, int start, int len)

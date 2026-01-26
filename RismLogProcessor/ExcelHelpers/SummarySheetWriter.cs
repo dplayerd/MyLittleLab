@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace RismLogProcessor.Helpers
+namespace RismLogProcessor.ExcelHelpers
 {
     public sealed class SummarySheetWriter
     {
