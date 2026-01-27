@@ -50,18 +50,18 @@ namespace RismLogProcessor.ExcelHelpers
                 "Label","Time","Direction","TraceCode","SeqNo","CmdNo","DbId","Attempt","MaxRetry","HeaderHex","Payload"
             };
 
-            if (includeParsedColumns)
-            {
-                headers.AddRange(new[]
-                {
-                    "PayloadPrefix","MachineNo","CardNo","Effect","SendTimeToken","MatchKey"
-                });
-            }
+            //if (includeParsedColumns)
+            //{
+            //    headers.AddRange(new[]
+            //    {
+            //        "PayloadPrefix","MachineNo","CardNo","Effect","SendTimeToken","MatchKey"
+            //    });
+            //}
 
-            if (includeOnly80PairHint)
-            {
-                headers.Add("Only80_PairKey(SeqNo)");
-            }
+            //if (includeOnly80PairHint)
+            //{
+            //    headers.Add("Only80_PairKey(SeqNo)");
+            //}
 
             var headerRow = sheet.CreateRow(0);
             for (int i = 0; i < headers.Count; i++)
@@ -86,21 +86,21 @@ namespace RismLogProcessor.ExcelHelpers
                 // 重要：Payload 原樣輸出（含尾端空白）
                 Set(row, c++, rows[r].Payload);
 
-                if (includeParsedColumns)
-                {
-                    var p = rows[r].Parsed;
-                    Set(row, c++, p?.Prefix ?? "");
-                    Set(row, c++, p?.MachineNo ?? "");
-                    Set(row, c++, p?.CardNo ?? "");
-                    Set(row, c++, p?.Effect ?? "");
-                    Set(row, c++, p?.SendTimeToken ?? "");
-                    Set(row, c++, p?.MatchKey ?? "");
-                }
+                //if (includeParsedColumns)
+                //{
+                //    var p = rows[r].Parsed;
+                //    Set(row, c++, p?.Prefix ?? "");
+                //    Set(row, c++, p?.MachineNo ?? "");
+                //    Set(row, c++, p?.CardNo ?? "");
+                //    Set(row, c++, p?.Effect ?? "");
+                //    Set(row, c++, p?.SendTimeToken ?? "");
+                //    Set(row, c++, p?.MatchKey ?? "");
+                //}
 
-                if (includeOnly80PairHint)
-                {
-                    Set(row, c++, rows[r].SeqNo?.ToString(CultureInfo.InvariantCulture) ?? "");
-                }
+                //if (includeOnly80PairHint)
+                //{
+                //    Set(row, c++, rows[r].SeqNo?.ToString(CultureInfo.InvariantCulture) ?? "");
+                //}
             }
 
             for (int i = 0; i < headers.Count; i++)

@@ -191,14 +191,14 @@ namespace RismLogProcessor.ExcelHelpers
                     rr.GetCell(16).SetCellFormula($"MID(O{excelRow},7,16)");
                     rr.GetCell(17).SetCellFormula($"MID(O{excelRow},23,4)");
                 }
-                else
-                {
-                    rr.GetCell(13).SetCellValue(""); // 留空，讓 ISNUMBER 判斷失敗
-                    rr.GetCell(14).SetCellValue("");
-                    rr.GetCell(15).SetCellValue("-");
-                    rr.GetCell(16).SetCellValue("-");
-                    rr.GetCell(17).SetCellValue("-");
-                }
+                //else
+                //{
+                //    rr.GetCell(13).SetCellValue(""); // 留空，讓 ISNUMBER 判斷失敗
+                //    rr.GetCell(14).SetCellValue("");
+                //    rr.GetCell(15).SetCellValue("-");
+                //    rr.GetCell(16).SetCellValue("-");
+                //    rr.GetCell(17).SetCellValue("-");
+                //}
 
                 // S/T：f6 Send Time & Payload（S 用 DateTime）
                 if (isLastAttempt && !string.IsNullOrEmpty(rec.DbId) &&
@@ -217,12 +217,12 @@ namespace RismLogProcessor.ExcelHelpers
                 }
 
                 // U Seconds：Excel 公式（可靠性要求）
-                // =IF(ISNUMBER(N3),ROUND((N3-I3)*86400,0),"No Reply")
+                //      =IF(ISNUMBER(N3),ROUND((N3-I3)*86400,0),"No Reply")
                 rr.GetCell(20).SetCellType(CellType.Numeric);
-                rr.GetCell(20).SetCellFormula($"IF(ISNUMBER(N{excelRow}),ROUND((N{excelRow}-I{excelRow})*86400,0),\"No Reply\")");
+                rr.GetCell(20).SetCellFormula($"IF(ISNUMBER(N{excelRow}),ROUND((N{excelRow}-I{excelRow})*86400,0),\"\")");
 
                 // V Range：Excel 公式（依 U 分桶 30 秒）
-                // =IF(ISNUMBER(U3),TEXT(FLOOR(U3,30),"000")&"~"&TEXT(CEILING(U3,30),"000"),"")
+                //      =IF(ISNUMBER(U3),TEXT(FLOOR(U3,30),"000")&"~"&TEXT(CEILING(U3,30),"000"),"")
                 rr.GetCell(21).SetCellFormula($"IF(ISNUMBER(U{excelRow}),TEXT(FLOOR(U{excelRow},30),\"000\")&\"~\"&TEXT(CEILING(U{excelRow},30),\"000\"),\"\")");
             }
 
